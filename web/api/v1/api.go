@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+	
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -52,6 +53,7 @@ import (
 	"github.com/prometheus/prometheus/tsdb/index"
 	"github.com/prometheus/prometheus/util/httputil"
 	"github.com/prometheus/prometheus/util/stats"
+	"github.com/prometheus/prometheus/handler/targets"
 )
 
 const (
@@ -291,6 +293,8 @@ func (api *API) Register(r *route.Router) {
 	r.Post("/admin/tsdb/clean_tombstones", wrap(api.cleanTombstones))
 	r.Post("/admin/tsdb/snapshot", wrap(api.snapshot))
 
+	r.Post("/admin/targets/add_target", wrap(api.addTarget))
+
 	r.Put("/admin/tsdb/delete_series", wrap(api.deleteSeries))
 	r.Put("/admin/tsdb/clean_tombstones", wrap(api.cleanTombstones))
 	r.Put("/admin/tsdb/snapshot", wrap(api.snapshot))
@@ -308,6 +312,51 @@ func (api *API) options(r *http.Request) apiFuncResult {
 }
 
 func (api *API) query(r *http.Request) apiFuncResult {
+
+	/*if strings.Contains(r.URL.String(), "id=") {
+		// find id
+		
+		/*id_start_index := strings.Index(r.URL.String(), "id=")
+		id_start_index = id_start_index + 6
+		id_end_index := id_start_index + 8
+		lookup_id := r.URL.String()[id_start_index:id_end_index]
+		level.Warn(api.logger).Log("msg", "checking of match", "err", lookup_id)
+
+		
+
+		// lookup if its not remote do nothing else get the ip and port
+		hostname := "http://localhost:9091/api/v1"
+		new_url := hostname+r.URL.String()
+		
+		query_response, err := http.Get(new_url)
+		if err != nil {
+			level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
+		}
+
+		defer query_response.Body.Close()
+
+		query_body, err := ioutil.ReadAll(query_response.Body)
+		if err != nil {
+			level.Warn(api.logger).Log("msg", "get response not successfull", "err", err)
+		}
+
+		query_body_new := "["+string(query_body)+"]"
+		var objs []map[string]*json.RawMessage
+
+		err = json.Unmarshal([]byte(query_body_new), &objs)
+		if err != nil {
+			level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
+		}
+		level.Warn(api.logger).Log("msg", "successfull", "stat", objs[0]["data"])
+
+		return apiFuncResult{&queryData{
+			ResultType: objs[0]["data"]["resultType"],
+			Result:     objs[0]["data"]["result"],
+			Stats:      "",
+		}, nil, nil, nil}
+	}  */
+
+
 	var ts time.Time
 	if t := r.FormValue("time"); t != "" {
 		var err error
@@ -349,6 +398,8 @@ func (api *API) query(r *http.Request) apiFuncResult {
 	if r.FormValue("stats") != "" {
 		qs = stats.NewQueryStats(qry.Stats())
 	}
+
+	level.Warn(api.logger).Log("msg", "checking of match", "err", res)
 
 	return apiFuncResult{&queryData{
 		ResultType: res.Value.Type(),
@@ -551,7 +602,6 @@ func (api *API) series(r *http.Request) apiFuncResult {
 	if set.Err() != nil {
 		return apiFuncResult{nil, &apiError{errorExec, set.Err()}, warnings, nil}
 	}
-
 	return apiFuncResult{metrics, nil, warnings, nil}
 }
 
@@ -1126,6 +1176,39 @@ func (api *API) remoteReadQuery(ctx context.Context, query *prompb.Query, extern
 		return err
 	}
 	return seriesHandleFn(set)
+}
+
+func (api *API) addTarget(r *http.Request) apiFuncResult {
+	if !api.enableAdmin {
+		return apiFuncResult{nil, &apiError{errorUnavailable, errors.New("admin APIs disabled")}, nil, nil}
+	}
+
+	if err := r.ParseForm(); err != nil {
+		return apiFuncResult{nil, &apiError{errorBadData, errors.Wrap(err, "error parsing form values")}, nil, nil}
+	}
+
+	if len(r.Form["id"]) == 0 {
+		return apiFuncResult{nil, &apiError{errorBadData, errors.New("no id parameter provided")}, nil, nil}
+	}
+
+	if len(r.Form["url"]) == 0 {
+		return apiFuncResult{nil, &apiError{errorBadData, errors.New("no url parameter provided")}, nil, nil}
+	}
+
+	target_id := r.FormValue("id")
+	target_url := r.FormValue("url")
+
+	// lookup goes here
+
+	// addTarget function: curl -X POST -g 'http://localhost:9090/api/v1/admin/targets/add_target?id=ABCDEF1&url=localhost:8082'
+	if !targets.AddTargetToConfig(target_id, target_url) {
+		return apiFuncResult{nil, &apiError{errorBadData, errors.New("could not add target")}, nil, nil}
+	}
+
+	return apiFuncResult{struct {
+			TargetId string `json:"id"`
+			TargetUrl string `json:"url"`
+	}{target_id, target_url}, nil, nil, nil}
 }
 
 func (api *API) deleteSeries(r *http.Request) apiFuncResult {
