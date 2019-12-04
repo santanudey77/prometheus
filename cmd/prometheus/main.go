@@ -60,6 +60,7 @@ import (
 	"github.com/prometheus/prometheus/storage/remote"
 	"github.com/prometheus/prometheus/storage/tsdb"
 	"github.com/prometheus/prometheus/util/strutil"
+	"github.com/prometheus/prometheus/util/hashutil"
 	"github.com/prometheus/prometheus/web"
 )
 
@@ -360,6 +361,10 @@ func main() {
 	de := dist.New(logger, &cfg.dist)
 	de.Start()
 	//dist-end
+
+	// test function
+	level.Info(logger).Log("get_hash", hashutil.GetHash(39.7420, -104.9915))
+
 
 	var (
 		localStorage  = &tsdb.ReadyStorage{}

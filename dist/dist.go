@@ -20,7 +20,7 @@ type Options struct {
 type DistEngine struct {
 	logger      log.Logger
 	options     *Options
-	connections map[string]net.TCPConn //address versus connection
+	connections map[string]net.Conn //address versus connection
 	mutex       sync.Mutex
 }
 
@@ -64,7 +64,7 @@ func (de *DistEngine) connectToPeer() {
 	if conn, err := net.Dial("tcp", de.options.PeerAddress); err != nil {
 		level.Error(de.logger).Log("msg", "Error connecting to peer.", "error", err)
 	} else {
-		go de.connectionReaderJson(conn)
+		//go de.connectionReaderJson(conn)
 
 		newNodeJoinedMsg := NewNodeJoinedMsg{
 			Node: Node {
@@ -93,11 +93,14 @@ func (de *DistEngine) connectToPeer() {
 	}
 }
 
-func sendMessage(conn net.Conn, data []byte) error {
-	if _, err := conn.Write(data); err != nil {
-		return err
+func (de *DistEngine) sendMessage(toAddress string, data []byte) error {
+	if conn, err := net.Dial("tcp", toAddress); err != nil {
+		level.Error(de.logger).Log("msg", "Error connecting to peer.", "error", err)
+	} else {
+		if _, err := conn.Write(data); err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
