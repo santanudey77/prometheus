@@ -19,6 +19,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/prometheus/dist"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // Comment this line to disable pprof endpoint.
@@ -119,6 +120,7 @@ func main() {
 		corsRegexString string
 
 		promlogConfig promlog.Config
+		dist 				dist.Options
 	}{
 		notifier: notifier.Options{
 			Registerer: prometheus.DefaultRegisterer,
@@ -135,6 +137,19 @@ func main() {
 	a.Version(version.Print("prometheus"))
 
 	a.HelpFlag.Short('h')
+
+	// dist-start
+	a.Flag("dist.id", "p2p id.").
+		Default("unspecified").StringVar(&cfg.dist.Id)
+	a.Flag("dist.longitude", "p2p geo longitude.").
+		Default("unspecified").StringVar(&cfg.dist.Longitude)
+	a.Flag("dist.latitude", "p2p geo latitude.").
+		Default("unspecified").StringVar(&cfg.dist.Latitude)
+	a.Flag("dist.peerAddress", "p2p peer address(IP:port).").
+		Default("unspecified").StringVar(&cfg.dist.PeerAddress)
+	a.Flag("dist.localAddress", "p2p local address(IP:port).").
+		Default("unspecified").StringVar(&cfg.dist.LocalAddress)
+	// dist-end
 
 	a.Flag("config.file", "Prometheus configuration file path.").
 		Default("prometheus.yml").StringVar(&cfg.configFile)
@@ -249,6 +264,7 @@ func main() {
 	a.Flag("query.max-samples", "Maximum number of samples a single query can load into memory. Note that queries will fail if they try to load more samples than this into memory, so this also limits the number of samples a query can return.").
 		Default("50000000").IntVar(&cfg.queryMaxSamples)
 
+
 	promlogflag.AddFlags(a, &cfg.promlogConfig)
 
 	_, err := a.Parse(os.Args[1:])
@@ -334,6 +350,16 @@ func main() {
 	level.Info(logger).Log("host_details", prom_runtime.Uname())
 	level.Info(logger).Log("fd_limits", prom_runtime.FdLimits())
 	level.Info(logger).Log("vm_limits", prom_runtime.VmLimits())
+
+	//dist-start
+	level.Info(logger).Log("dist.id", cfg.dist.Id)
+	level.Info(logger).Log("dist.longitude", cfg.dist.Longitude)
+	level.Info(logger).Log("dist.latitude", cfg.dist.Latitude)
+	level.Info(logger).Log("dist.peerAddress", cfg.dist.PeerAddress)
+	level.Info(logger).Log("dist.localAddress", cfg.dist.LocalAddress)
+	de := dist.New(logger, &cfg.dist)
+	de.Start()
+	//dist-end
 
 	var (
 		localStorage  = &tsdb.ReadyStorage{}
