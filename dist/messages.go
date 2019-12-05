@@ -16,6 +16,7 @@ type Node struct {
 	Address string `json:"address"`
 }
 type NewNodeJoinedMsg struct {
+	SenderNode Node `json:"sender_node"`
 	Node Node `json:"node"`
 }
 
