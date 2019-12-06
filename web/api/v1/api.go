@@ -16,6 +16,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/prometheus/dist"
 	"math"
 	"math/rand"
 	"net/http"
@@ -168,6 +169,7 @@ type TSDBAdmin interface {
 // API can register a set of endpoints in a router and handle
 // them using the provided storage and query engine.
 type API struct {
+	de *dist.DistEngine
 	Queryable   storage.Queryable
 	QueryEngine *promql.Engine
 
@@ -197,6 +199,7 @@ func init() {
 
 // NewAPI returns an initialized API type.
 func NewAPI(
+	de *dist.DistEngine,
 	qe *promql.Engine,
 	q storage.Queryable,
 	tr targetRetriever,
@@ -216,6 +219,7 @@ func NewAPI(
 	buildInfo *PrometheusVersion,
 ) *API {
 	return &API{
+		de: de,
 		QueryEngine:           qe,
 		Queryable:             q,
 		targetRetriever:       tr,

@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/prometheus/dist"
 	"io"
 	"io/ioutil"
 	stdlog "log"
@@ -247,7 +248,7 @@ type Options struct {
 }
 
 // New initializes a new web Handler.
-func New(logger log.Logger, o *Options) *Handler {
+func New(logger log.Logger, o *Options, de *dist.DistEngine) *Handler {
 	if logger == nil {
 		logger = log.NewNopLogger()
 	}
@@ -288,7 +289,7 @@ func New(logger log.Logger, o *Options) *Handler {
 		ready: 0,
 	}
 
-	h.apiV1 = api_v1.NewAPI(h.queryEngine, h.storage, h.scrapeManager, h.notifier,
+	h.apiV1 = api_v1.NewAPI(de, h.queryEngine, h.storage, h.scrapeManager, h.notifier,
 		func() config.Config {
 			h.mtx.RLock()
 			defer h.mtx.RUnlock()
