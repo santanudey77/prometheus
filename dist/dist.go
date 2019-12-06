@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"github.com/prometheus/prometheus/handler/targets"
 )
 
 type Options struct {
@@ -213,7 +214,9 @@ func (de *DistEngine) handleAddSource(message []byte) error {
 	} else {
 		level.Info(de.logger).Log("msg", fmt.Sprintf("Received add source event %+v", addSourceMsg))
 		//TODO : add logic to update local prometheus config with new source info
-
+		if !targets.AddTargetToConfig(addSourceMsg.SourceGuuid, addSourceMsg.SourceScrapeTargetURL) {
+			level.Error(de.logger).Log("msg", "Error adding target to this source")
+		}
 	}
 	return nil
 }
