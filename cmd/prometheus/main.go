@@ -358,7 +358,7 @@ func main() {
 	level.Info(logger).Log("dist.latitude", cfg.dist.Latitude)
 	level.Info(logger).Log("dist.peerAddress", cfg.dist.PeerAddress)
 	level.Info(logger).Log("dist.localAddress", cfg.dist.LocalAddress)
-	cfg.dist.configFile := cfg.configFile
+	cfg.dist.ConfigFile = cfg.configFile
 	de := dist.New(logger, &cfg.dist)
 	de.Start()
 	//dist-end
