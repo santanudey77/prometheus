@@ -378,7 +378,7 @@ func (api *API) query(r *http.Request) apiFuncResult {
 			}
 
 			if ((objs.Error == "") && len(objs.Warnings) > 0) {
-				return apiFuncResult{nil,
+				return apiFuncResult{&objs.Data,
 					nil,
 					s_warnings,
 					nil}
