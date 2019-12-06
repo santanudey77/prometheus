@@ -264,12 +264,12 @@ func min(a, b int64) int64 {
 
 func distanceBetween(guid1, guid2 string) int64 {
 	guid1Val, _ := strconv.ParseInt(guid1, 16, 64)
-	guid2Val, _ := strconv.ParseInt(guid1, 16, 64)
+	guid2Val, _ := strconv.ParseInt(guid2, 16, 64)
 	return min(abs(guid1Val-guid2Val), 4294967296-abs(guid1Val-guid2Val))
 }
 
 func getHexDifference(guid1, guid2 string) int64 {
 	guid1Val, _ := strconv.ParseInt(guid1, 16, 64)
-	guid2Val, _ := strconv.ParseInt(guid1, 16, 64)
+	guid2Val, _ := strconv.ParseInt(guid2, 16, 64)
 	return guid1Val - guid2Val
 }

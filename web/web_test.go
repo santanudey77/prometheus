@@ -126,7 +126,7 @@ func TestReadyAndHealthy(t *testing.T) {
 
 	opts.Flags = map[string]string{}
 
-	webHandler := New(nil, opts)
+	webHandler := New(nil, opts, nil)
 
 	webHandler.config = &config.Config{}
 	webHandler.notifier = &notifier.Manager{}
@@ -310,7 +310,7 @@ func TestRoutePrefix(t *testing.T) {
 
 	opts.Flags = map[string]string{}
 
-	webHandler := New(nil, opts)
+	webHandler := New(nil, opts, nil)
 	go func() {
 		err := webHandler.Run(context.Background())
 		if err != nil {
@@ -393,7 +393,7 @@ func TestDebugHandler(t *testing.T) {
 		opts := &Options{
 			RoutePrefix: tc.prefix,
 		}
-		handler := New(nil, opts)
+		handler := New(nil, opts, nil)
 		handler.Ready()
 
 		w := httptest.NewRecorder()
@@ -411,7 +411,7 @@ func TestDebugHandler(t *testing.T) {
 func TestHTTPMetrics(t *testing.T) {
 	t.Parallel()
 
-	handler := New(nil, &Options{RoutePrefix: "/"})
+	handler := New(nil, &Options{RoutePrefix: "/"}, nil)
 	getReady := func() int {
 		t.Helper()
 		w := httptest.NewRecorder()
