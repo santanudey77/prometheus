@@ -1239,6 +1239,15 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 	target_url := r.FormValue("url")
 
 	// lookup goes here
+	lookedup_node := api.de.LookupGuid(target_id)
+	local_id := api.de.GetLocalId()
+
+	if local_id == lookedup_node.Guuid {
+		// add config here
+	}else {
+		// add config on the remote peer lookedup_node
+		api.de.SendSourceAddToPeer(target_id, target_url, lookedup_node.Address)
+	}
 
 	// addTarget function: curl -X POST -g 'http://localhost:9090/api/v1/admin/targets/add_target?id=ABCDEF1&url=localhost:8082'
 	if !targets.AddTargetToConfig(target_id, target_url) {

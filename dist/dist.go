@@ -213,8 +213,27 @@ func (de *DistEngine) handleAddSource(message []byte) error {
 	} else {
 		level.Info(de.logger).Log("msg", fmt.Sprintf("Received add source event %+v", addSourceMsg))
 		//TODO : add logic to update local prometheus config with new source info
+
 	}
 	return nil
+}
+
+func (de * DistEngine) SendSourceAddToPeer(sourceGuid, sourceUrl, peerAddress string){
+	addSourceMsg := AddSourceMsg{
+		SourceScrapeTargetURL: sourceUrl,
+		SourceGuuid:           sourceGuid,
+	}
+	if msgBytes, marshal_err := json.Marshal(addSourceMsg); marshal_err != nil {
+		level.Error(de.logger).Log("msg", "Error marshalling add source message to peer", "error", marshal_err)
+	} else {
+		distMessage := DistMessage{
+			Mtype: MsgType_AddSource,
+			Data:  msgBytes,
+		}
+		if send_err := de.sendMessage(peerAddress, distMessage); send_err != nil {
+			level.Error(de.logger).Log("msg", "Error sending add source message to peer", "error", send_err)
+		}
+	}
 }
 
 func (de *DistEngine) LookupGuid(inGuid string) Node {
