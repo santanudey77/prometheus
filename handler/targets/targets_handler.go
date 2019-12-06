@@ -18,8 +18,8 @@ type Target struct {
 	Labels	Label		`json:"labels"`
 }
 
-func AddTargetToConfig (id, url string) bool{
-	filename := "/tmp/sg-pcfg/targets.json"
+func AddTargetToConfig (id, url, dir_of_json string) bool{
+	filename := dir_of_json + "targets.json"
 	
 	file, err := os.Open(filename)
 	if err != nil {
