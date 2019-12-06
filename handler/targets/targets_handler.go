@@ -45,7 +45,7 @@ func AddTargetToConfig (id, url, dir_of_json string) bool{
 	}
 
 	target_url_str := []string{url}
-	targets = append(targets, Target{Targets: target_url_str, Labels: Label{Env: "prod", Job: "status", Id: id}})
+	targets = append(targets, Target{Targets: target_url_str, Labels: Label{Job: "dist", Id: id}})
 
 	result, err := json.Marshal(targets)
 	if err != nil {

@@ -370,6 +370,27 @@ func (api *API) query(r *http.Request) apiFuncResult {
 			//	s_warnings,
 			//	nil}
 
+			if ((objs.Error != "") && len(objs.Warnings) < 1){
+				return apiFuncResult{nil,
+					&apiError{objs.ErrorType, errors.New(objs.Error)},
+					nil,
+					nil}
+			}
+
+			if ((objs.Error == "") && len(objs.Warnings) > 0) {
+				return apiFuncResult{nil,
+					nil,
+					s_warnings,
+					nil}
+			}
+
+			if ((objs.Error != "") && len(objs.Warnings) > 0){
+				return apiFuncResult{nil,
+					&apiError{objs.ErrorType, errors.New(objs.Error)},
+					s_warnings,
+					nil}
+			}
+
 			//TODO : check error and warnings based on unmarshalled objs.ErrorType, objs.Error and objs.Warnings
 			return apiFuncResult{&objs.Data,
 				nil,
