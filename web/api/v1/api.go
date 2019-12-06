@@ -1244,14 +1244,13 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 
 	if local_id == lookedup_node.Guuid {
 		// add config here
+		// addTarget function: curl -X POST -g 'http://localhost:9090/api/v1/admin/targets/add_target?id=ABCDEF1&url=localhost:8082'
+		if !targets.AddTargetToConfig(target_id, target_url) {
+			return apiFuncResult{nil, &apiError{errorBadData, errors.New("could not add target")}, nil, nil}
+		}	
 	}else {
 		// add config on the remote peer lookedup_node
 		api.de.SendSourceAddToPeer(target_id, target_url, lookedup_node.Address)
-	}
-
-	// addTarget function: curl -X POST -g 'http://localhost:9090/api/v1/admin/targets/add_target?id=ABCDEF1&url=localhost:8082'
-	if !targets.AddTargetToConfig(target_id, target_url) {
-		return apiFuncResult{nil, &apiError{errorBadData, errors.New("could not add target")}, nil, nil}
 	}
 
 	return apiFuncResult{struct {
