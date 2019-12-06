@@ -19,7 +19,7 @@ type Target struct {
 }
 
 func AddTargetToConfig (id, url, dir_of_json string) bool{
-	filename := dir_of_json + "targets.json"
+	filename := dir_of_json + "/targets.json"
 	
 	file, err := os.Open(filename)
 	if err != nil {

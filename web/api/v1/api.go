@@ -30,7 +30,6 @@ import (
 	"time"
 	"unsafe"
 	"io/ioutil"
-	"path/filepath"
 	
 
 	"github.com/go-kit/kit/log"
@@ -399,8 +398,6 @@ func (api *API) query(r *http.Request) apiFuncResult {
 	if r.FormValue("stats") != "" {
 		qs = stats.NewQueryStats(qry.Stats())
 	}
-
-	level.Warn(api.logger).Log("msg", "checking of match", "err", res)
 
 	return apiFuncResult{&queryData{
 		ResultType: res.Value.Type(),
@@ -1239,7 +1236,7 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 	target_id := r.FormValue("id")
 	target_url := r.FormValue("url")
 	
-	path_of_yml_file := flagsMap[config.file]
+	path_of_yml_file := api.flagsMap["config.file"]
 	dir_for_target := filepath.Dir(path_of_yml_file)
 	dir_for_target = dir_for_target
 
