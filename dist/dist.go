@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"path/filename"
 	"github.com/prometheus/prometheus/handler/targets"
 )
 
@@ -19,6 +20,7 @@ type Options struct {
 	Latitude     string
 	PeerAddress  string
 	LocalAddress string
+	ConfigFile	 string
 }
 
 type DistEngine struct {
@@ -213,8 +215,11 @@ func (de *DistEngine) handleAddSource(message []byte) error {
 		return decode_err
 	} else {
 		level.Info(de.logger).Log("msg", fmt.Sprintf("Received add source event %+v", addSourceMsg))
+
+		yml_path = de.o.ConfigFile
+		dir_target = filepath.Dir(yml_path)
 		//TODO : add logic to update local prometheus config with new source info
-		if !targets.AddTargetToConfig(addSourceMsg.SourceGuuid, addSourceMsg.SourceScrapeTargetURL) {
+		if !targets.AddTargetToConfig(addSourceMsg.SourceGuuid, addSourceMsg.SourceScrapeTargetURL, dir_target) {
 			level.Error(de.logger).Log("msg", "Error adding target to this source")
 		}
 	}

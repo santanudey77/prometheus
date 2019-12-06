@@ -30,6 +30,7 @@ import (
 	"time"
 	"unsafe"
 	"io/ioutil"
+	"path/filepath"
 	
 
 	"github.com/go-kit/kit/log"
@@ -1237,6 +1238,10 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 
 	target_id := r.FormValue("id")
 	target_url := r.FormValue("url")
+	
+	path_of_yml_file := flagsMap[config.file]
+	dir_for_target := filepath.Dir(path_of_yml_file)
+	dir_for_target = dir_for_target
 
 	// lookup goes here
 	lookedup_node := api.de.LookupGuid(target_id)
@@ -1245,7 +1250,7 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 	if local_id == lookedup_node.Guuid {
 		// add config here
 		// addTarget function: curl -X POST -g 'http://localhost:9090/api/v1/admin/targets/add_target?id=ABCDEF1&url=localhost:8082'
-		if !targets.AddTargetToConfig(target_id, target_url) {
+		if !targets.AddTargetToConfig(target_id, target_url, dir_for_target) {
 			return apiFuncResult{nil, &apiError{errorBadData, errors.New("could not add target")}, nil, nil}
 		}	
 	}else {
