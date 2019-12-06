@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -353,18 +354,25 @@ func main() {
 	level.Info(logger).Log("vm_limits", prom_runtime.VmLimits())
 
 	//dist-start
+	if cfg.dist.Id == "unspecified"  {
+		latitude, _ := strconv.ParseFloat(cfg.dist.Latitude, 64)
+		longitude, _ := strconv.ParseFloat(cfg.dist.Longitude, 64)
+		cfg.dist.Id = hashutil.GetHash(latitude,longitude )
+	}
+
 	level.Info(logger).Log("dist.id", cfg.dist.Id)
 	level.Info(logger).Log("dist.longitude", cfg.dist.Longitude)
 	level.Info(logger).Log("dist.latitude", cfg.dist.Latitude)
 	level.Info(logger).Log("dist.peerAddress", cfg.dist.PeerAddress)
 	level.Info(logger).Log("dist.localAddress", cfg.dist.LocalAddress)
+
 	cfg.dist.ConfigFile = cfg.configFile
 	de := dist.New(logger, &cfg.dist)
 	de.Start()
 	//dist-end
 
 	// test function
-	level.Info(logger).Log("get_hash", hashutil.GetHash(39.7420, -104.9915))
+
 
 
 	var (

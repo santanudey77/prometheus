@@ -8,7 +8,6 @@ import (
 )
 
 type Label struct{
-	Env	string	`json:"env"`
 	Job string	`json:"job"`
 	Id	string	`json:"id"`
 }
