@@ -317,6 +317,57 @@ func (api *API) options(r *http.Request) apiFuncResult {
 }
 
 func (api *API) query(r *http.Request) apiFuncResult {
+	
+	if strings.Contains(r.URL.String(), "id=") {
+		// find id
+		
+		id_start_index := strings.Index(r.URL.String(), "id=")
+		id_start_index = id_start_index + 6
+		id_end_index := id_start_index + 8
+		source_id := r.URL.String()[id_start_index:id_end_index]
+		//level.Warn(api.logger).Log("msg", "checking of match", "err", source_id)
+
+		lookedup_node := api.de.LookupGuid(source_id)
+		local_id := api.de.GetLocalId()
+
+		if lookedup_node.Guuid != local_id{
+	
+			// lookup if its not remote do nothing else get the ip and port
+			socket_ip_of_prom := lookedup_node.Address
+			hostname := strings.Split(socket_ip_of_prom, ":")[0]
+			hostname = "http://"+hostname+":9090/api/v1"
+			new_url := hostname+r.URL.String()
+			
+			query_response, err := http.Get(new_url)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
+			}
+
+			defer query_response.Body.Close()
+
+			query_body, err := ioutil.ReadAll(query_response.Body)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "get response not successfull", "err", err)
+			}
+
+			var objs response
+
+			json := jsoniter.ConfigCompatibleWithStandardLibrary
+			err = json.Unmarshal(query_body, &objs)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
+			}
+			//level.Warn(api.logger).Log("msg", "successfull", "stat", objs)
+			fmt.Printf("%+v", objs)
+			var s_warnings storage.Warnings
+			for _,rw := range objs.Warnings {
+				s_warnings = append(s_warnings, errors.New(rw))
+			} 
+			return apiFuncResult{objs.Data, &apiError{objs.ErrorType, errors.New(objs.Error)}, s_warnings, nil}
+			
+		}
+	}
+	
 	var ts time.Time
 	if t := r.FormValue("time"); t != "" {
 		var err error
@@ -353,46 +404,6 @@ func (api *API) query(r *http.Request) apiFuncResult {
 		return apiFuncResult{nil, returnAPIError(res.Err), res.Warnings, qry.Close}
 	}
 
-	if strings.Contains(r.URL.String(), "id=") {
-		// find id
-		
-		/*id_start_index := strings.Index(r.URL.String(), "id=")
-		id_start_index = id_start_index + 6
-		id_end_index := id_start_index + 8
-		lookup_id := r.URL.String()[id_start_index:id_end_index]
-		level.Warn(api.logger).Log("msg", "checking of match", "err", lookup_id)*/
-
-		
-
-		// lookup if its not remote do nothing else get the ip and port
-		hostname := "http://localhost:9091/api/v1"
-		new_url := hostname+r.URL.String()
-		
-		query_response, err := http.Get(new_url)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
-		}
-
-		defer query_response.Body.Close()
-
-		query_body, err := ioutil.ReadAll(query_response.Body)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "get response not successfull", "err", err)
-		}
-
-		var objs response
-
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		err = json.Unmarshal(query_body, &objs)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
-		}
-		//level.Warn(api.logger).Log("msg", "successfull", "stat", objs)
-		fmt.Printf("%+v", objs)
-
-		return apiFuncResult{objs.Data, nil, nil, nil}
-	}
-
 	// Optional stats field in response if parameter "stats" is not empty.
 	var qs *stats.QueryStats
 	if r.FormValue("stats") != "" {
@@ -407,6 +418,57 @@ func (api *API) query(r *http.Request) apiFuncResult {
 }
 
 func (api *API) queryRange(r *http.Request) apiFuncResult {
+	
+	if strings.Contains(r.URL.String(), "id=") {
+		// find id
+		
+		id_start_index := strings.Index(r.URL.String(), "id=")
+		id_start_index = id_start_index + 6
+		id_end_index := id_start_index + 8
+		source_id := r.URL.String()[id_start_index:id_end_index]
+		//level.Warn(api.logger).Log("msg", "checking of match", "err", source_id)
+
+		lookedup_node := api.de.LookupGuid(source_id)
+		local_id := api.de.GetLocalId()
+
+		if lookedup_node.Guuid != local_id{
+	
+			// lookup if its not remote do nothing else get the ip and port
+			socket_ip_of_prom := lookedup_node.Address
+			hostname := strings.Split(socket_ip_of_prom, ":")[0]
+			hostname = "http://"+hostname+":9090/api/v1"
+			new_url := hostname+r.URL.String()
+			
+			query_response, err := http.Get(new_url)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
+			}
+
+			defer query_response.Body.Close()
+
+			query_body, err := ioutil.ReadAll(query_response.Body)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "get response not successfull", "err", err)
+			}
+
+			var objs response
+
+			json := jsoniter.ConfigCompatibleWithStandardLibrary
+			err = json.Unmarshal(query_body, &objs)
+			if err != nil {
+				level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
+			}
+			//level.Warn(api.logger).Log("msg", "successfull", "stat", objs)
+			fmt.Printf("%+v", objs)
+			var s_warnings storage.Warnings
+			for _,rw := range objs.Warnings {
+				s_warnings = append(s_warnings, errors.New(rw))
+			} 
+			return apiFuncResult{objs.Data, &apiError{objs.ErrorType, errors.New(objs.Error)}, s_warnings, nil}
+			
+		}
+	}
+	
 	start, err := parseTime(r.FormValue("start"))
 	if err != nil {
 		err = errors.Wrapf(err, "invalid parameter 'start'")
@@ -433,8 +495,8 @@ func (api *API) queryRange(r *http.Request) apiFuncResult {
 		return apiFuncResult{nil, &apiError{errorBadData, err}, nil, nil}
 	}
 
-	// For safety, limit the number of returned points per timeseries.
-	// This is sufficient for 60s resolution for a week or 1h resolution for a year.
+	// For safety limit the number of returned points per timeseries.
+	// This is sufficient for 60sec resolution for a week or 1h resolution for a year.
 	if end.Sub(start)/step > 11000 {
 		err := errors.New("exceeded maximum resolution of 11,000 points per timeseries. Try decreasing the query resolution (?step=XX)")
 		return apiFuncResult{nil, &apiError{errorBadData, err}, nil, nil}
@@ -461,46 +523,6 @@ func (api *API) queryRange(r *http.Request) apiFuncResult {
 	res := qry.Exec(ctx)
 	if res.Err != nil {
 		return apiFuncResult{nil, returnAPIError(res.Err), res.Warnings, qry.Close}
-	}
-
-	if strings.Contains(r.URL.String(), "id=") {
-		// find id
-		
-		/*id_start_index := strings.Index(r.URL.String(), "id=")
-		id_start_index = id_start_index + 6
-		id_end_index := id_start_index + 8
-		lookup_id := r.URL.String()[id_start_index:id_end_index]
-		level.Warn(api.logger).Log("msg", "checking of match", "err", lookup_id)*/
-
-		
-
-		// lookup if its not remote do nothing else get the ip and port
-		hostname := "http://localhost:9091/api/v1"
-		new_url := hostname+r.URL.String()
-		
-		query_response, err := http.Get(new_url)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
-		}
-
-		defer query_response.Body.Close()
-
-		query_body, err := ioutil.ReadAll(query_response.Body)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "get response not successfull", "err", err)
-		}
-
-		var objs response
-
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		err = json.Unmarshal(query_body, &objs)
-		if err != nil {
-			level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
-		}
-		//level.Warn(api.logger).Log("msg", "successfull", "stat", objs)
-		fmt.Printf("%+v", objs)
-
-		return apiFuncResult{objs.Data, nil, nil, nil}
 	}
 
 	// Optional stats field in response if parameter "stats" is not empty.
