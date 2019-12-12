@@ -9,7 +9,7 @@ import (
 
 type Label struct{
 	Job string	`json:"job"`
-	Id	string	`json:"id"`
+	Id	string	`json:"sourceGuid"`
 }
 
 type Target struct {

@@ -138,49 +138,51 @@ func (de *DistEngine) handleNewNodeJoined(message []byte, originalJoinMsg DistMe
 		return decode_err
 	} else {
 		level.Info(de.logger).Log("msg", fmt.Sprintf("Received new node joined event %+v", newNodeMsg))
-
-		nodesInSystemMsg := NodesInSystemMsg{
-			Nodes: make([]Node, 0),
-		}
-		nodesInSystemMsg.Nodes = append(nodesInSystemMsg.Nodes, Node{
-			Guuid:   de.options.Id,
-			Address: de.options.LocalAddress,
-		})
 		de.mutex.Lock()
-		for _, node := range de.peers {
-			nodesInSystemMsg.Nodes = append(nodesInSystemMsg.Nodes, node)
-		}
-
-		if msgBytes, marshal_err := json.Marshal(nodesInSystemMsg); marshal_err != nil {
-			level.Error(de.logger).Log("msg", "Error marshalling Nodes In System Message", "error", marshal_err)
-		} else {
-			distMessage := DistMessage{
-				Mtype: MsgType_NodesInSystem,
-				Data:  msgBytes,
+		if newNodeMsg.SenderNode.Guuid == newNodeMsg.Node.Guuid {
+			nodesInSystemMsg := NodesInSystemMsg{
+				Nodes: make([]Node, 0),
 			}
-			if send_err := de.sendMessage(newNodeMsg.Node.Address, distMessage); send_err != nil {
-				level.Error(de.logger).Log("msg", "Error sending nodes in system event to joining node", "error", send_err)
-			}
-		}
-
-		fwdedNewNodeJoinedMsg := NewNodeJoinedMsg{
-			SenderNode: Node{
+			nodesInSystemMsg.Nodes = append(nodesInSystemMsg.Nodes, Node{
 				Guuid:   de.options.Id,
 				Address: de.options.LocalAddress,
-			},
-			Node:       newNodeMsg.Node,
-		}
-		if fwdedMsgBytes, fwd_marshal_err := json.Marshal(fwdedNewNodeJoinedMsg); fwd_marshal_err != nil {
-			level.Error(de.logger).Log("msg", "Error marshalling fwded new node join message", "error", fwd_marshal_err)
-		} else {
-			distMessage := DistMessage{
-				Mtype: MsgType_NewNodeJoined,
-				Data:  fwdedMsgBytes,
+			})
+
+			for _, node := range de.peers {
+				nodesInSystemMsg.Nodes = append(nodesInSystemMsg.Nodes, node)
 			}
-			for fwd_guid, fwd_node := range de.peers {
-				if fwd_guid != newNodeMsg.SenderNode.Guuid {
-					if fwd_send_err := de.sendMessage(fwd_node.Address, distMessage); fwd_send_err != nil {
-						level.Error(de.logger).Log("msg", "Error fwding new node joined message", "error", fwd_send_err)
+
+			if msgBytes, marshal_err := json.Marshal(nodesInSystemMsg); marshal_err != nil {
+				level.Error(de.logger).Log("msg", "Error marshalling Nodes In System Message", "error", marshal_err)
+			} else {
+				distMessage := DistMessage{
+					Mtype: MsgType_NodesInSystem,
+					Data:  msgBytes,
+				}
+				if send_err := de.sendMessage(newNodeMsg.Node.Address, distMessage); send_err != nil {
+					level.Error(de.logger).Log("msg", "Error sending nodes in system event to joining node", "error", send_err)
+				}
+			}
+
+			fwdedNewNodeJoinedMsg := NewNodeJoinedMsg{
+				SenderNode: Node{
+					Guuid:   de.options.Id,
+					Address: de.options.LocalAddress,
+				},
+				Node:       newNodeMsg.Node,
+			}
+			if fwdedMsgBytes, fwd_marshal_err := json.Marshal(fwdedNewNodeJoinedMsg); fwd_marshal_err != nil {
+				level.Error(de.logger).Log("msg", "Error marshalling fwded new node join message", "error", fwd_marshal_err)
+			} else {
+				distMessage := DistMessage{
+					Mtype: MsgType_NewNodeJoined,
+					Data:  fwdedMsgBytes,
+				}
+				for fwd_guid, fwd_node := range de.peers {
+					if fwd_guid != newNodeMsg.SenderNode.Guuid {
+						if fwd_send_err := de.sendMessage(fwd_node.Address, distMessage); fwd_send_err != nil {
+							level.Error(de.logger).Log("msg", "Error fwding new node joined message", "error", fwd_send_err)
+						}
 					}
 				}
 			}

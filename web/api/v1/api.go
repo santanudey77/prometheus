@@ -318,13 +318,13 @@ func (api *API) options(r *http.Request) apiFuncResult {
 
 func (api *API) query(r *http.Request) apiFuncResult {
 	level.Info(api.logger).Log("msg", fmt.Sprintf("Handling client query %v",r.URL.String()))
-	if strings.Contains(r.URL.String(), "id%3D") {
+	if strings.Contains(r.URL.String(), "sourceGuid%3D") {
 		// find id
-		id_start_index := strings.Index(r.URL.String(), "id%3D%22")
-		id_start_index = id_start_index + 8
+		id_start_index := strings.Index(r.URL.String(), "sourceGuid%3D%22")
+		id_start_index = id_start_index + 16
 		id_end_index := id_start_index + 8
 		source_id := r.URL.String()[id_start_index:id_end_index]
-		level.Info(api.logger).Log("msg", fmt.Sprintf("Looking up source ID %v", source_id))
+		level.Info(api.logger).Log("msg", fmt.Sprintf("Looking up source GUID %v", source_id))
 
 		lookedup_node := api.de.LookupGuid(source_id)
 		level.Info(api.logger).Log("msg", fmt.Sprintf("Looked up node %+v", lookedup_node))
@@ -365,10 +365,6 @@ func (api *API) query(r *http.Request) apiFuncResult {
 			for _,rw := range objs.Warnings {
 				s_warnings = append(s_warnings, errors.New(rw))
 			} 
-			//return apiFuncResult{&objs.Data,
-			//	&apiError{objs.ErrorType, errors.New(objs.Error)},
-			//	s_warnings,
-			//	nil}
 
 			if ((objs.Error != "") && len(objs.Warnings) < 1){
 				return apiFuncResult{nil,
@@ -391,7 +387,6 @@ func (api *API) query(r *http.Request) apiFuncResult {
 					nil}
 			}
 
-			//TODO : check error and warnings based on unmarshalled objs.ErrorType, objs.Error and objs.Warnings
 			return apiFuncResult{&objs.Data,
 				nil,
 				nil,
@@ -450,27 +445,27 @@ func (api *API) query(r *http.Request) apiFuncResult {
 }
 
 func (api *API) queryRange(r *http.Request) apiFuncResult {
-	level.Info(api.logger).Log("msg", "Handling query range from client")
-	if strings.Contains(r.URL.String(), "id=") {
+	level.Info(api.logger).Log("msg", fmt.Sprintf("Handling client query %v",r.URL.String()))
+	if strings.Contains(r.URL.String(), "sourceGuid%3D") {
 		// find id
-		
-		id_start_index := strings.Index(r.URL.String(), "id=")
-		id_start_index = id_start_index + 6
+		id_start_index := strings.Index(r.URL.String(), "sourceGuid%3D%22")
+		id_start_index = id_start_index + 16
 		id_end_index := id_start_index + 8
 		source_id := r.URL.String()[id_start_index:id_end_index]
-		//level.Warn(api.logger).Log("msg", "checking of match", "err", source_id)
+		level.Info(api.logger).Log("msg", fmt.Sprintf("Looking up source GUID %v", source_id))
 
 		lookedup_node := api.de.LookupGuid(source_id)
+		level.Info(api.logger).Log("msg", fmt.Sprintf("Looked up node %+v", lookedup_node))
 		local_id := api.de.GetLocalId()
 
 		if lookedup_node.Guuid != local_id{
-	
+			level.Info(api.logger).Log("msg", "Looked up remote node")
 			// lookup if its not remote do nothing else get the ip and port
 			socket_ip_of_prom := lookedup_node.Address
 			hostname := strings.Split(socket_ip_of_prom, ":")[0]
 			hostname = "http://"+hostname+":9090/api/v1"
 			new_url := hostname+r.URL.String()
-			
+			level.Info(api.logger).Log("msg", fmt.Sprintf("Redirecting query to URL %v", new_url))
 			query_response, err := http.Get(new_url)
 			if err != nil {
 				level.Warn(api.logger).Log("msg", "get request not successfull", "err", err)
@@ -491,16 +486,44 @@ func (api *API) queryRange(r *http.Request) apiFuncResult {
 				level.Warn(api.logger).Log("msg", "could not unmarshal", "err", err)
 			}
 			//level.Warn(api.logger).Log("msg", "successfull", "stat", objs)
-			fmt.Printf("%+v", objs)
+			fmt.Printf("%+v\n", objs)
+
+			level.Info(api.logger).Log("msg", "Returning remote response")
 			var s_warnings storage.Warnings
 			for _,rw := range objs.Warnings {
 				s_warnings = append(s_warnings, errors.New(rw))
-			} 
-			return apiFuncResult{objs.Data, &apiError{objs.ErrorType, errors.New(objs.Error)}, s_warnings, nil}
-			
+			}
+
+			if ((objs.Error != "") && len(objs.Warnings) < 1){
+				return apiFuncResult{nil,
+					&apiError{objs.ErrorType, errors.New(objs.Error)},
+					nil,
+					nil}
+			}
+
+			if ((objs.Error == "") && len(objs.Warnings) > 0) {
+				return apiFuncResult{&objs.Data,
+					nil,
+					s_warnings,
+					nil}
+			}
+
+			if ((objs.Error != "") && len(objs.Warnings) > 0){
+				return apiFuncResult{nil,
+					&apiError{objs.ErrorType, errors.New(objs.Error)},
+					s_warnings,
+					nil}
+			}
+
+			return apiFuncResult{&objs.Data,
+				nil,
+				nil,
+				nil}
+
 		}
 	}
-	
+
+
 	start, err := parseTime(r.FormValue("start"))
 	if err != nil {
 		err = errors.Wrapf(err, "invalid parameter 'start'")
@@ -1279,7 +1302,7 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 		return apiFuncResult{nil, &apiError{errorBadData, errors.Wrap(err, "error parsing form values")}, nil, nil}
 	}
 
-	if len(r.Form["id"]) == 0 {
+	if len(r.Form["sourceGuid"]) == 0 {
 		return apiFuncResult{nil, &apiError{errorBadData, errors.New("no id parameter provided")}, nil, nil}
 	}
 
@@ -1287,7 +1310,7 @@ func (api *API) addTarget(r *http.Request) apiFuncResult {
 		return apiFuncResult{nil, &apiError{errorBadData, errors.New("no url parameter provided")}, nil, nil}
 	}
 
-	target_id := r.FormValue("id")
+	target_id := r.FormValue("sourceGuid")
 	target_url := r.FormValue("url")
 	
 	path_of_yml_file := api.flagsMap["config.file"]
